@@ -1,6 +1,5 @@
-# models.py
-from sqlalchemy import Column, Integer, String, Date
-from database import Base # <--- Changed
+from sqlalchemy import Column, Integer, String, DateTime
+from database import Base 
 
 class MarketData(Base):
     __tablename__ = "market_data"
@@ -8,6 +7,7 @@ class MarketData(Base):
     id = Column(Integer, primary_key=True, index=True)
     crop = Column(String, index=True)
     price = Column(String)
-    date_updated = Column(Date)
+    date_updated = Column(DateTime) 
     location = Column(String, index=True)
     update_frequency = Column(String, nullable=True)
+    source = Column(String, nullable=True)

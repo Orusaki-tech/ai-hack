@@ -40,7 +40,7 @@ safety_settings = {
     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
 }
 
-GEMINI_API_KEY="AIzaSyCj7-hhuD72mHrJNwtV5ZQmTvT3Wg620Os"
+GEMINI_API_KEY="AIzaSyBvaH2i7Ou7T1is3K8DIY9xkkQ4eS0MlQg"
 
 
 
@@ -151,20 +151,9 @@ try:
 
     for i, item in enumerate(parsed_data):  # Using enumerate to get the index for error reporting
         try:
-            # Create a Pydantic object from the dictionary item
-            # This is where the validation happens!
-            pydantic_model = schemas.MarketDataBase(
-                # FIX 1: Add the location field from the JSON item
-                location=item.get("location"),
-                
-                crop=item.get("crop"),
-                price=item.get("price"),
-                
-                # This will now correctly map the date string from the JSON
-                date_updated=item.get("date_updated"), 
-                
-                update_frequency=item.get("update_frequency")
-            )
+            # Pydantic will automatically map all keys from the 'item' dictionary
+        # to the fields in the MarketDataBase schema. It's cleaner and safer.
+            pydantic_model = schemas.MarketDataBase(**item)
             market_data_list.append(pydantic_model)
 
         # FIX 2: Catch validation errors for a SINGLE item
@@ -178,12 +167,32 @@ try:
 
     # Step 3: Pass the list of VALID Pydantic objects to the database function.
     if market_data_list:
-        save_market_data_list(market_data_list)
+        db = SessionLocal() # <--- Create a new database session
+        try:
+            # Pass BOTH the database session and the list of items
+            crud.save_market_data_list(db=db, market_data_items=market_data_list)
+            print("✅ Data successfully saved to the database.")
+        finally:
+            db.close() # <--- Ensure the session is closed
     else:
         print("No valid data was found to save.")
 
     # Step 4: Show the results
-    get_all_market_data()
+    # Step 4: VERIFY BY PRINTING FROM DATABASE
+    print("\n--- Verifying data from the database ---")
+    db = SessionLocal()  # <--- 1. Create a new database session
+    try:
+        # Pass the session 'db' as an argument to the function
+        all_items = crud.get_all_market_data(db=db) # <--- 2. Use the session
+
+        if not all_items:
+            print("No items found in the database.")
+        for item in all_items:
+            # Note: item.date_updated will now be a datetime object
+            print(f"  [DB_RECORD] ID: {item.id}, Crop: {item.crop}, Location: {item.location}, Price: {item.price}, Date: {item.date_updated.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    finally:
+        db.close() # <--- 3. Close the session when you're done
 
 
 

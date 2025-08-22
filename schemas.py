@@ -1,7 +1,5 @@
-# file: schemas.py
-
 from pydantic import BaseModel, Field
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 # This is the base Pydantic model. It contains fields common to
@@ -10,7 +8,7 @@ class MarketDataBase(BaseModel):
     crop: str
     location: str
     price: str
-    date_updated: str
+    date_updated: datetime
     update_frequency: str
     source: Optional[str] = None
 

@@ -1,53 +1,42 @@
-# crud.py
-from typing import List
+
+from typing import List, Optional
 from sqlalchemy.orm import Session
-import models_1  # <--- Changed
-import schemas # <--- Changed
-from datetime import date
+import models
+import schemas
 
-def save_market_data_list(db: Session, market_data_items: List[schemas.MarketDataBase]):
+# --- WRITE Operations (Used by the ETL Pipeline) ---
+
+def save_market_data_list(db: Session, market_data_items: List[schemas.MarketDataBase]) -> List[models.MarketData]:
     """
-    Takes a list of Pydantic MarketDatabaseBase objects, converts them to
-    SQLAlchemy model instances, and saves them to the database in a single,
+    Takes a list of Pydantic MarketDataBase objects, converts them to
+    SQLAlchemy model instances, and saves them to the database in a single
     efficient transaction.
-
-    Args:
-        db (Session): The active database session.
-        market_data_items (List[schemas.MarketDatabaseBase]): A list of Pydantic
-                                                              objects to be saved.
-
-    Returns:
-        List[models.MarketData]: The list of SQLAlchemy model instances that were saved.
     """
-    print(f"--> [CRUD] Preparing to save a batch of {len(market_data_items)} items.")
+    print(f" Preparing to save a batch of {len(market_data_items)} items.")
+    
+    # This is a data mapping step, perfectly suitable for the DAL
+    db_objects = [models.MarketData(**item.model_dump()) for item in market_data_items]
 
-    # 1. Use a list comprehension to convert all Pydantic objects into
-    #    SQLAlchemy model instances. .model_dump() gets the data as a dictionary.
-    db_objects = [models_1.MarketData(**item.model_dump()) for item in market_data_items]
-
-    # 2. Use db.add_all() to add all the new objects to the session at once.
-    #    This is much more efficient than adding them in a loop.
     db.add_all(db_objects)
-
-    # 3. Commit the transaction to write all changes to the database.
-    #    This happens only once for the entire batch.
     db.commit()
 
-    print(f"--> [CRUD] Successfully committed {len(db_objects)} items to the database.")
-
-    # Return the list of created database objects.
-    # Note: Their IDs are now populated from the database.
+    print(f"Successfully committed {len(db_objects)} items to the database.")
     return db_objects
 
-# You can also keep a function to read the data to verify it
-def get_all_market_data(db: Session):
+
+# --- READ Operations (Used by the Service Layer) ---
+
+def get_all_market_data(db: Session) -> List[models.MarketData]:
     """
     Retrieves all market data records from the database.
     """
-    return db.query(models_1.MarketData).all()
+    print("Querying all market data records.")
+    return db.query(models.MarketData).all()
 
-# def get_all_market_data(db: Session):
-#     """
-#     Retrieves all market data items from the database.
-#     """
-#     return db.query(models.MarketData).all()
+
+def get_market_data_by_id(db: Session, item_id: int) -> Optional[models.MarketData]:
+    """
+    Retrieves a single market data record from the database by its ID.
+    """
+    print(f"Querying for market data with ID: {item_id}.")
+    return db.query(models.MarketData).filter(models.MarketData.id == item_id).first()
