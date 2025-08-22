@@ -3,10 +3,9 @@ This project consists of two independent services: a standalone ETL pipeline tha
 
 # System Architecture
 - The system is designed with a decoupled architecture, separating the data ingestion (write) process from the data serving (read) process. The following diagram illustrates the flow of data between the components.
-(To add your diagram, save the image as system-design.png in the root of your project directory and this line will automatically display it.)
 
 
- ![System Design Diagram](PulsePrice AI SD.png)
+ ![System Design Diagram](https://github.com/Orusaki-tech/ai-hack/blob/main/PulsePrice%20AI%20SD.png)
 
 
 ## Technology Stack
